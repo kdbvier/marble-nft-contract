@@ -1,4 +1,4 @@
-use paras_nft_contract::{ContractContract as Contract, TokenSeriesId};
+use marble_nft_contract::{ContractContract as Contract, TokenSeriesId};
 use near_sdk_sim::{
     deploy, init_simulator, to_yocto, ContractAccount, UserAccount, DEFAULT_GAS
 };
@@ -297,27 +297,27 @@ fn simulate_create_mint_bundle() {
     println!("[CREATE MINT BUNDLE] Gas burnt price: {} TeraGas", outcome.gas_burnt() as f64 / 1e12);
 }
 
-#[test]
-fn simulate_change_royalty() {
-    let (root, nft, alice) = init();
+// #[test]
+// fn simulate_change_royalty() {
+//     let (root, nft, alice) = init();
     
-    let change_royalty = root.call(
-        nft.account_id(),
-        "set_total_royalty",
-        &json!({
-            "total_royalty": 1200
-        }).to_string().into_bytes(),
-        DEFAULT_GAS,
-        1
-    );
-    println!("\n\n change_royalty: {:?}", change_royalty);
-    let now_royalty= alice.view(
-        nft.account_id(),
-        "get_total_royalty",
-        &json!({}).to_string().into_bytes()
-    ).unwrap_json_value();
-    println!("\n\n now_royalty: {:?}", now_royalty);
-}
+//     let change_royalty = root.call(
+//         nft.account_id(),
+//         "set_total_royalty",
+//         &json!({
+//             "total_royalty": 1200
+//         }).to_string().into_bytes(),
+//         DEFAULT_GAS,
+//         1
+//     );
+//     println!("\n\n change_royalty: {:?}", change_royalty);
+//     let now_royalty= alice.view(
+//         nft.account_id(),
+//         "get_total_royalty",
+//         &json!({}).to_string().into_bytes()
+//     ).unwrap_json_value();
+//     println!("\n\n now_royalty: {:?}", now_royalty);
+// }
 
 #[test]
 fn simulate_remove_series() {
@@ -344,11 +344,30 @@ fn simulate_remove_series() {
         DEFAULT_GAS,
         to_yocto("2")
     );
+    let outcome1 = root.call(
+        nft.account_id(),
+        "nft_create_series",
+        &json!({
+            "token_metadata": {
+                "title": "A".repeat(200),
+                "reference": "A".repeat(59),
+                "media": "A".repeat(59),
+                "copies": 100u64,
+            },
+            "price": to_yocto("1").to_string(),
+            "royalty": {
+                "0".repeat(64): 1000u32
+            },
+            "creator_id": alice.account_id(),
+        }).to_string().into_bytes(),
+        DEFAULT_GAS,
+        to_yocto("2")
+    );
 
     let series = root.view(nft.account_id(), "nft_get_series", &json!({}).to_string().into_bytes()).unwrap_json_value();
     println!("\n\n create series id: {:?}", series);
 
-    let remove_series = root.call(
+    let remove_series = alice.call(
         nft.account_id(),
         "nft_remove_series",
         &json!({

@@ -6,7 +6,6 @@ use near_contract_standards::non_fungible_token::metadata::{
 };
 use near_contract_standards::non_fungible_token::NonFungibleToken;
 use near_contract_standards::non_fungible_token::{Token, TokenId};
-use near_sdk::Metadata;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LazyOption, LookupMap, UnorderedMap, UnorderedSet, Vector};
 use near_sdk::json_types::{ValidAccountId, U128, U64};
@@ -16,7 +15,6 @@ use near_sdk::{
 };
 use near_sdk::serde::{Deserialize, Serialize};
 use std::collections::{HashMap};
-use std::ptr::metadata;
 use near_sdk::env::{is_valid_account_id};
 
 pub mod event;
@@ -345,8 +343,7 @@ impl Contract {
         &mut self,
         token_series_id: TokenSeriesId
     ) {
-        let token_series = self.token_series_by_id.get(&token_series_id).expect("Marble: Token series not exist");
-        assert!(env::predecessor_account_id()==token_series.creator_id || env::predecessor_account_id()==self.tokens.owner_id, "Marble: Creator Only");
+        assert_eq!(env::predecessor_account_id(),self.tokens.owner_id, "Marble: Owner Only");
         self.token_series_by_id.remove(&token_series_id);
     }
 
