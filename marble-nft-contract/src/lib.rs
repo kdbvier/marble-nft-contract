@@ -16,6 +16,7 @@ use near_sdk::{
 };
 use near_sdk::serde::{Deserialize, Serialize};
 use std::collections::{HashMap};
+use std::ptr::metadata;
 use near_sdk::env::{is_valid_account_id};
 
 pub mod event;
@@ -340,6 +341,16 @@ impl Contract {
     }
 
     #[payable]
+    pub fn nft_remove_series(
+        &mut self,
+        token_series_id: TokenSeriesId
+    ) {
+        let token_series = self.token_series_by_id.get(&token_series_id).expect("Marble: Token series not exist");
+        assert!(env::predecessor_account_id()==token_series.creator_id || env::predecessor_account_id()==self.tokens.owner_id, "Marble: Creator Only");
+        self.token_series_by_id.remove(&token_series_id);
+    }
+
+    #[payable]
     pub fn nft_buy(
         &mut self,
         token_series_id: TokenSeriesId,
@@ -497,7 +508,20 @@ impl Contract {
                 }
             },
             Some(metadata) => {
-                metadata
+                TokenMetadata {
+                    title: None,          // ex. "Arch Nemesis: Mail Carrier" or "Parcel #5055"
+                    description: None,    // free-form description
+                    media: metadata.media, // URL to associated media, preferably to decentralized, content-addressed storage
+                    media_hash: None, // Base64-encoded sha256 hash of content referenced by the `media` field. Required if `media` is included.
+                    copies: None, // number of copies of this set of metadata in existence when token was minted.
+                    issued_at: Some(env::block_timestamp().to_string()), // ISO 8601 datetime when token was issued or minted
+                    expires_at: None, // ISO 8601 datetime when token expires
+                    starts_at: Some(env::block_timestamp().to_string()), // ISO 8601 datetime when token starts being valid
+                    updated_at: None, // ISO 8601 datetime when token was last updated
+                    extra: None, // anything extra the NFT wants to store on-chain. Can be stringified JSON.
+                    reference: metadata.reference, // URL to an off-chain JSON file with more info.
+                    reference_hash: None, // Base64-encoded sha256 hash of JSON from reference field. Required if `reference` is included.
+                }
             },
         };
 
@@ -1482,6 +1506,30 @@ mod tests {
             "bafybeicg4ss7qh5odijfn2eogizuxkrdh3zlv4eftcmgnljwu7dm64uwji".to_string()
         );
     }
+    
+    // #[test]
+    // fn test_remove_series() {
+    //     let (mut context, mut contract) = setup_contract();
+    //     testing_env!(context
+    //         .predecessor_account_id(accounts(1))
+    //         .attached_deposit(STORAGE_FOR_CREATE_SERIES)
+    //         .build()
+    //     );
+
+    //     let mut royalty: HashMap<AccountId, u32> = HashMap::new();
+    //     royalty.insert(accounts(1).to_string(), 1000);
+    //     create_series(
+    //         &mut contract,
+    //         &royalty,
+    //         Some(U128::from(1 * 10u128.pow(24))),
+    //         None,
+    //     );
+    //     let nft_series_return = contract.nft_get_series_single("1".to_string());
+    //     println!("\n\n Remove series console: {?:}",nft_series_return);
+    //     nft_remove_series(&mut contract, "1");
+    //     let nft_series_return = contract.nft_get_series_single("1".to_string());
+    //     println!("\n\n Remove series console: {?:}",nft_series_return);
+    // }
 
     #[test]
     fn test_buy() {

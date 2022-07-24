@@ -318,3 +318,50 @@ fn simulate_change_royalty() {
     ).unwrap_json_value();
     println!("\n\n now_royalty: {:?}", now_royalty);
 }
+
+#[test]
+fn simulate_remove_series() {
+    let (root, nft, alice) = init();
+
+    let initial_storage_usage = nft.account().unwrap().storage_usage;
+
+    let outcome = root.call(
+        nft.account_id(),
+        "nft_create_series",
+        &json!({
+            "token_metadata": {
+                "title": "A".repeat(200),
+                "reference": "A".repeat(59),
+                "media": "A".repeat(59),
+                "copies": 100u64,
+            },
+            "price": to_yocto("1").to_string(),
+            "royalty": {
+                "0".repeat(64): 1000u32
+            },
+            "creator_id": alice.account_id(),
+        }).to_string().into_bytes(),
+        DEFAULT_GAS,
+        to_yocto("2")
+    );
+
+    let series = root.view(nft.account_id(), "nft_get_series", &json!({}).to_string().into_bytes()).unwrap_json_value();
+    println!("\n\n create series id: {:?}", series);
+
+    let remove_series = root.call(
+        nft.account_id(),
+        "nft_remove_series",
+        &json!({
+            "token_series_id": "1"
+        }).to_string().into_bytes(),
+        DEFAULT_GAS,
+        to_yocto("1")
+    );
+
+    let series = root.view(nft.account_id(), "nft_get_series", &json!({}).to_string().into_bytes()).unwrap_json_value();
+    println!("\n\n remove series id: {:?}", series);
+
+    
+
+
+}
