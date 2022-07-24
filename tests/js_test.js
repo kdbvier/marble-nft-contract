@@ -13,8 +13,8 @@ const main = async () => {
 		// Initializing nearAPI
 		// Login and init contract
 		const keyStore = new nearAPI.keyStores.InMemoryKeyStore();
-        // const PRIVATE_KEY = "ed25519:9nYNwsP7mYqMLRsouSLaqKCBZTFcs8R34CVWgHNqoP351VVqsRmdPvKax8XCqWcKnGNsy45AYuofw6UsMPEJfdE";
-        const PRIVATE_KEY = "ed25519:2F9g25e6eXCXtKLtHr7SQddBrqdqXDJBLqHuWKy7SNQ9hqCbWP9FGcNpqaryyxiUUfGKQUKz4Uch743WMKkDU1M2";
+        // const PRIVATE_KEY = "ed25519:9nYNwsP7mYqMLRsouSLaqKCBZTFcs8R34CVWgHNqoP351VVqsRmdPvKax8XCqWcKnGNsy45AYuofw6UsMPEJfdE";  //vier1near
+        const PRIVATE_KEY = "ed25519:2F9g25e6eXCXtKLtHr7SQddBrqdqXDJBLqHuWKy7SNQ9hqCbWP9FGcNpqaryyxiUUfGKQUKz4Uch743WMKkDU1M2"; //viernear
         const keyPair = nearAPI.KeyPair.fromString(PRIVATE_KEY);
         await keyStore.setKey("testnet","viernear.testnet",keyPair);
 
@@ -37,7 +37,8 @@ const main = async () => {
 					'nft_create_series',
                     'nft_mint',
                     'nft_set_series_price',
-                    'nft_buy'
+                    'nft_buy',
+                    'nft_remove_series'
 				],
                 viewMethods: [
                     'nft_get_series'
@@ -90,7 +91,9 @@ const main = async () => {
         //     // "1000000000000000000000000",
         //     "1500000000000000000000000",
         //     )
+        const ret = await contract.nft_get_series();
 		console.log(ret)
+
 	} catch (err) {
 		throw err
 	}

@@ -135,6 +135,7 @@ pub struct Contract {
     treasury_id: AccountId,
     mint_bundles: UnorderedMap<MintBundleId, MintBundle>,
     total_royalty: u32,
+    total_series: u64
 }
 
 const DATA_IMAGE_SVG_COMIC_ICON: &str = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MyIgdmlld0JveD0iMCAwIDQ3LjI1IDQ3LjI1IiBoZWlnaHQ9IjYzIiB2ZXJzaW9uPSIxLjAiPjxkZWZzPjxjbGlwUGF0aCBpZD0iYSI+PHBhdGggZD0iTTEuMTcyIDBoNDYuNTEydjQ2LjM3OUgxLjE3MlptMCAwIi8+PC9jbGlwUGF0aD48L2RlZnM+PGcgY2xpcC1wYXRoPSJ1cmwoI2EpIj48cGF0aCBkPSJNMjQuNDI2LjEyMWMtMTIuNzAzIDAtMjMgMTAuMy0yMyAyMy4wMDQgMCAxMi43MDMgMTAuMjk3IDIzLjAwNCAyMyAyMy4wMDQgMTIuNzA3IDAgMjMuMDA0LTEwLjMgMjMuMDA0LTIzLjAwNEM0Ny40MyAxMC40MjIgMzcuMTMzLjEyMSAyNC40MjYuMTIxIi8+PC9nPjxwYXRoIGZpbGw9IiNGRkYiIGQ9Ik0yNC40MjIgMS40MTRjLTExLjk4OCAwLTIxLjcwNyA5LjcxOS0yMS43MDcgMjEuNzAzIDAgMTEuOTg4IDkuNzE5IDIxLjcwNyAyMS43MDcgMjEuNzA3IDExLjk4OCAwIDIxLjcwNy05LjcxOSAyMS43MDctMjEuNzA3IDAtMTEuOTg0LTkuNzE5LTIxLjcwMy0yMS43MDctMjEuNzAzIi8+PHBhdGggZD0iTTI0LjQxOCAyLjYwNWMtMTEuMzI4IDAtMjAuNTEyIDkuMTg0LTIwLjUxMiAyMC41MDggMCAxMS4zMzIgOS4xODQgMjAuNTEyIDIwLjUxMiAyMC41MTIgMTEuMzI4IDAgMjAuNTEyLTkuMTggMjAuNTEyLTIwLjUxMiAwLTExLjMyNC05LjE4NC0yMC41MDgtMjAuNTEyLTIwLjUwOCIvPjxwYXRoIGZpbGw9IiNGRkYiIGQ9Ik0xMC42MDIgMjQuNjRoLTIuNjNjLS4xMDkgMC0uMTk5LS4wODUtLjE5OS0uMTk1di0yLjYzM2EuMi4yIDAgMCAxIC4yLS4xOTVoMi42MjljLjEwOSAwIC4xOTkuMDkuMTk5LjE5NXYyLjYzM2MwIC4xMS0uMDkuMTk2LS4yLjE5Nk0xOS4xNiAyNS4zODdoLTMuOTNhLjI5NS4yOTUgMCAwIDEtLjI5My0uMjkzdi0zLjkzYzAtLjE2NC4xMzMtLjI5My4yOTMtLjI5M2gzLjkzYy4xNiAwIC4yOTMuMTI5LjI5My4yOTN2My45M2MwIC4xNi0uMTMzLjI5My0uMjkzLjI5M00yOS4xMjkgMjYuMDgyaC01LjE1MmEuMzguMzggMCAwIDEtLjM4My0uMzgzdi01LjE1MmMwLS4yMTEuMTcyLS4zODMuMzgzLS4zODNoNS4xNTJjLjIxIDAgLjM4My4xNzIuMzgzLjM4M3Y1LjE1MmEuMzguMzggMCAwIDEtLjM4My4zODNNNDAuNTkgMjYuODI4aC02LjQ1YS40ODYuNDg2IDAgMCAxLS40OC0uNDg0di02LjQ1YzAtLjI2MS4yMTktLjQ4LjQ4LS40OGg2LjQ1Yy4yNjUgMCAuNDguMjE5LjQ4LjQ4djYuNDVhLjQ4My40ODMgMCAwIDEtLjQ4LjQ4NCIvPjwvc3ZnPg==";
@@ -197,6 +198,7 @@ impl Contract {
             treasury_id: treasury_id.to_string(),
             total_royalty: total_royalty,
             mint_bundles: UnorderedMap::new(StorageKey::MintBundles),
+            total_series: 0
         }
     }
 
@@ -216,6 +218,7 @@ impl Contract {
             treasury_id: prev.treasury_id,
             total_royalty: 9000,
             mint_bundles: UnorderedMap::new(StorageKey::MintBundles),
+            total_series: 0
         };
 
         this
@@ -258,8 +261,14 @@ impl Contract {
         let initial_storage_usage = env::storage_usage();
 
         // assert_eq!(env::predecessor_account_id(), self.tokens.owner_id, "Marble: Only owner");
+        let mut total_series = self.total_series;
 
-        let token_series_id = format!("{}", (self.token_series_by_id.len() + 1));
+        if total_series == 0 {
+            total_series = self.token_series_by_id.len() + 1;
+        }
+        total_series = total_series + 1;
+
+        let token_series_id = format!("{}", (total_series));
 
         assert!(
             self.token_series_by_id.get(&token_series_id).is_none(),
@@ -312,7 +321,7 @@ impl Contract {
             is_mintable: true,
             royalty: royalty_res.clone(),
         });
-
+        self.total_series = total_series;
         env::log(
             json!({
                 "type": "nft_create_series",
