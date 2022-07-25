@@ -827,187 +827,187 @@ impl Contract {
 
     // Mint Bundles
 
-    #[payable]
-    pub fn buy_mint_bundle(
-        &mut self,
-        mint_bundle_id: MintBundleId,
-        receiver_id: ValidAccountId,
-    ) -> Option<TokenId> {
-        let initial_storage_usage = env::storage_usage();
-        let mut mint_bundle = self.mint_bundles.get(&mint_bundle_id).expect(
-            "Marble: Mint bundle does not exist or already finished"
-        );
+    // #[payable]
+    // pub fn buy_mint_bundle(
+    //     &mut self,
+    //     mint_bundle_id: MintBundleId,
+    //     receiver_id: ValidAccountId,
+    // ) -> Option<TokenId> {
+    //     let initial_storage_usage = env::storage_usage();
+    //     let mut mint_bundle = self.mint_bundles.get(&mint_bundle_id).expect(
+    //         "Marble: Mint bundle does not exist or already finished"
+    //     );
 
-        assert_eq!(env::predecessor_account_id(), receiver_id.to_string(), "Marble: Can only buy for caller");
+    //     assert_eq!(env::predecessor_account_id(), receiver_id.to_string(), "Marble: Can only buy for caller");
 
-        let price = mint_bundle.price.expect("Marble: Mint bundle hasn't started yet");
-        assert!(
-            env::attached_deposit() > price,
-            "Marble: Attached deposit lower than mint price"
-        );
+    //     let price = mint_bundle.price.expect("Marble: Mint bundle hasn't started yet");
+    //     assert!(
+    //         env::attached_deposit() > price,
+    //         "Marble: Attached deposit lower than mint price"
+    //     );
 
-        if let Some(limit_buy) = mint_bundle.limit_buy {
-            let mint_count = mint_bundle.bought_account_ids.get(&receiver_id.to_string()).unwrap_or(0);
-            assert!(
-                mint_count < limit_buy,
-                "Marble: Mint exhausted for account_id {}",
-                receiver_id
-            );
+    //     if let Some(limit_buy) = mint_bundle.limit_buy {
+    //         let mint_count = mint_bundle.bought_account_ids.get(&receiver_id.to_string()).unwrap_or(0);
+    //         assert!(
+    //             mint_count < limit_buy,
+    //             "Marble: Mint exhausted for account_id {}",
+    //             receiver_id
+    //         );
 
-            mint_bundle.bought_account_ids.insert(
-                &receiver_id.to_string(),
-                &(mint_count + 1)
-            );
-        }
+    //         mint_bundle.bought_account_ids.insert(
+    //             &receiver_id.to_string(),
+    //             &(mint_count + 1)
+    //         );
+    //     }
 
-        return if let Some(mut token_series_ids) = mint_bundle.token_series_ids {
-            let seed_num = get_random_number(0) as u64;
-            let index = seed_num % token_series_ids.len();
-            let token_series_id = token_series_ids.get(index).unwrap();
-            let token_id = self._nft_mint_series(token_series_id.clone(), receiver_id.to_string(),None);
+    //     return if let Some(mut token_series_ids) = mint_bundle.token_series_ids {
+    //         let seed_num = get_random_number(0) as u64;
+    //         let index = seed_num % token_series_ids.len();
+    //         let token_series_id = token_series_ids.get(index).unwrap();
+    //         let token_id = self._nft_mint_series(token_series_id.clone(), receiver_id.to_string(),None);
 
-            let token_series = self.token_series_by_id.get(&token_series_id.to_string()).unwrap();
-            if !token_series.is_mintable {
-                token_series_ids.swap_remove(index);
-            }
+    //         let token_series = self.token_series_by_id.get(&token_series_id.to_string()).unwrap();
+    //         if !token_series.is_mintable {
+    //             token_series_ids.swap_remove(index);
+    //         }
 
-            if token_series_ids.len() == 0 {
-                self.mint_bundles.remove(&mint_bundle_id);
-            } else {
-                mint_bundle.token_series_ids = Some(token_series_ids);
-                self.mint_bundles.insert(&mint_bundle_id, &mint_bundle);
-            }
+    //         if token_series_ids.len() == 0 {
+    //             self.mint_bundles.remove(&mint_bundle_id);
+    //         } else {
+    //             mint_bundle.token_series_ids = Some(token_series_ids);
+    //             self.mint_bundles.insert(&mint_bundle_id, &mint_bundle);
+    //         }
 
-            if price > 0 {
-                let for_treasury = price as u128 * TREASURY_FEE / 10_000u128;
-                let price_deducted = price - for_treasury;
-                Promise::new(token_series.creator_id).transfer(price_deducted);
-                Promise::new(self.treasury_id.clone()).transfer(for_treasury);
-            }
+    //         if price > 0 {
+    //             let for_treasury = price as u128 * TREASURY_FEE / 10_000u128;
+    //             let price_deducted = price - for_treasury;
+    //             Promise::new(token_series.creator_id).transfer(price_deducted);
+    //             Promise::new(self.treasury_id.clone()).transfer(for_treasury);
+    //         }
 
-            refund_deposit(env::storage_usage() - initial_storage_usage, price);
+    //         refund_deposit(env::storage_usage() - initial_storage_usage, price);
 
-            NearEvent::log_nft_mint(
-                receiver_id.to_string(),
-                vec![token_id.clone()],
-                Some(json!({"price": price.to_string()}).to_string()),
-            );
+    //         NearEvent::log_nft_mint(
+    //             receiver_id.to_string(),
+    //             vec![token_id.clone()],
+    //             Some(json!({"price": price.to_string()}).to_string()),
+    //         );
 
-            Some(token_id)
-        } else {
-            None
-        }
-    }
+    //         Some(token_id)
+    //     } else {
+    //         None
+    //     }
+    // }
 
-    #[payable]
-    pub fn create_mint_bundle(
-        &mut self,
-        mint_bundle_id: MintBundleId,
-        token_series_ids: Option<Vec<TokenSeriesId>>,
-        token_ids: Option<Vec<TokenId>>,
-        price: Option<U128>,
-        limit_buy: Option<u32>,
-    ) -> bool {
-        let initial_storage_usage = env::storage_usage();
+    // #[payable]
+    // pub fn create_mint_bundle(
+    //     &mut self,
+    //     mint_bundle_id: MintBundleId,
+    //     token_series_ids: Option<Vec<TokenSeriesId>>,
+    //     token_ids: Option<Vec<TokenId>>,
+    //     price: Option<U128>,
+    //     limit_buy: Option<u32>,
+    // ) -> bool {
+    //     let initial_storage_usage = env::storage_usage();
 
-        assert_eq!(env::predecessor_account_id(), self.tokens.owner_id, "Marble: Only owner");
+    //     assert_eq!(env::predecessor_account_id(), self.tokens.owner_id, "Marble: Only owner");
 
-        let mint_bundle = self.mint_bundles.get(&mint_bundle_id);
+    //     let mint_bundle = self.mint_bundles.get(&mint_bundle_id);
 
-        if mint_bundle.is_some() {
-            panic!("Mint bundle already exists");
-        }
+    //     if mint_bundle.is_some() {
+    //         panic!("Mint bundle already exists");
+    //     }
 
-        if token_series_ids.is_some() {
-            assert!(
-                token_ids.is_none(),
-                "Must chose either token_series_ids or token_ids"
-            );
-            let mut token_series_ids_internal: Vector<TokenSeriesId> = Vector::new(
-                StorageKey::MintBundleTokens { mint_bundle_id: mint_bundle_id.clone() }
-            );
-            for token_series_id in token_series_ids.unwrap() {
-                token_series_ids_internal.push(&token_series_id);
-            }
-            self.mint_bundles.insert(&mint_bundle_id.clone(), &MintBundle {
-                token_series_ids: Some(token_series_ids_internal),
-                token_ids: None,
-                price: match price {
-                    Some(x) => Some(x.0),
-                    None => None
-                },
-                limit_buy,
-                bought_account_ids: LookupMap::new(StorageKey::BoughtAccountId { mint_bundle_id }),
-            });
-        } else if token_ids.is_some() {
-            assert!(
-                token_series_ids.is_none(),
-                "Must chose either token_series_ids or token_ids"
-            );
-            panic!("Token Ids not supported for now");
-        }
+    //     if token_series_ids.is_some() {
+    //         assert!(
+    //             token_ids.is_none(),
+    //             "Must chose either token_series_ids or token_ids"
+    //         );
+    //         let mut token_series_ids_internal: Vector<TokenSeriesId> = Vector::new(
+    //             StorageKey::MintBundleTokens { mint_bundle_id: mint_bundle_id.clone() }
+    //         );
+    //         for token_series_id in token_series_ids.unwrap() {
+    //             token_series_ids_internal.push(&token_series_id);
+    //         }
+    //         self.mint_bundles.insert(&mint_bundle_id.clone(), &MintBundle {
+    //             token_series_ids: Some(token_series_ids_internal),
+    //             token_ids: None,
+    //             price: match price {
+    //                 Some(x) => Some(x.0),
+    //                 None => None
+    //             },
+    //             limit_buy,
+    //             bought_account_ids: LookupMap::new(StorageKey::BoughtAccountId { mint_bundle_id }),
+    //         });
+    //     } else if token_ids.is_some() {
+    //         assert!(
+    //             token_series_ids.is_none(),
+    //             "Must chose either token_series_ids or token_ids"
+    //         );
+    //         panic!("Token Ids not supported for now");
+    //     }
 
-        refund_deposit(env::storage_usage() - initial_storage_usage, 0);
+    //     refund_deposit(env::storage_usage() - initial_storage_usage, 0);
 
-        true
-    }
+    //     true
+    // }
 
-    #[payable]
-    pub fn delete_mint_bundle(
-        &mut self,
-        mint_bundle_id: MintBundleId
-    ) {
-        assert_one_yocto();
-        assert_eq!(env::predecessor_account_id(), self.tokens.owner_id, "Marble: Only owner");
-        self.mint_bundles.remove(&mint_bundle_id);
-    }
+    // #[payable]
+    // pub fn delete_mint_bundle(
+    //     &mut self,
+    //     mint_bundle_id: MintBundleId
+    // ) {
+    //     assert_one_yocto();
+    //     assert_eq!(env::predecessor_account_id(), self.tokens.owner_id, "Marble: Only owner");
+    //     self.mint_bundles.remove(&mint_bundle_id);
+    // }
 
-    #[payable]
-    pub fn set_price_mint_bundle(
-        &mut self,
-        mint_bundle_id: MintBundleId,
-        price: U128
-    ) {
-        assert_one_yocto();
-        assert_eq!(env::predecessor_account_id(), self.tokens.owner_id, "Marble: Only owner");
-        let mut mint_bundle = self.mint_bundles.get(&mint_bundle_id).unwrap();
-        mint_bundle.price = Some(price.0);
-        self.mint_bundles.insert(&mint_bundle_id, &mint_bundle);
-    }
+    // #[payable]
+    // pub fn set_price_mint_bundle(
+    //     &mut self,
+    //     mint_bundle_id: MintBundleId,
+    //     price: U128
+    // ) {
+    //     assert_one_yocto();
+    //     assert_eq!(env::predecessor_account_id(), self.tokens.owner_id, "Marble: Only owner");
+    //     let mut mint_bundle = self.mint_bundles.get(&mint_bundle_id).unwrap();
+    //     mint_bundle.price = Some(price.0);
+    //     self.mint_bundles.insert(&mint_bundle_id, &mint_bundle);
+    // }
 
 
-    // CUSTOM VIEWS
+    // // CUSTOM VIEWS
 
-    pub fn get_buy_count_mint_bundle(
-        &self,
-        mint_bundle_id: MintBundleId,
-        account_id: ValidAccountId
-    ) -> u32 {
-        let mint_bundle = self.mint_bundles.get(&mint_bundle_id).unwrap();
-        mint_bundle.bought_account_ids.get(&account_id.to_string()).unwrap_or(0)
-    }
+    // pub fn get_buy_count_mint_bundle(
+    //     &self,
+    //     mint_bundle_id: MintBundleId,
+    //     account_id: ValidAccountId
+    // ) -> u32 {
+    //     let mint_bundle = self.mint_bundles.get(&mint_bundle_id).unwrap();
+    //     mint_bundle.bought_account_ids.get(&account_id.to_string()).unwrap_or(0)
+    // }
 
-    pub fn get_mint_bundle(
-        &self,
-        mint_bundle_id: MintBundleId
-    ) -> MintBundleJson {
-        let mint_bundle = self.mint_bundles.get(&mint_bundle_id).unwrap();
-        MintBundleJson {
-            token_series_ids: match mint_bundle.token_series_ids {
-                Some(x) => Some(x.to_vec()),
-                None => None
-            },
-            token_ids: match mint_bundle.token_ids {
-                Some(x) => Some(x.to_vec()),
-                None => None
-            },
-            price: match mint_bundle.price {
-                Some(x) => Some(U128(x)),
-                None => None
-            },
-            limit_buy: mint_bundle.limit_buy
-        }
-    }
+    // pub fn get_mint_bundle(
+    //     &self,
+    //     mint_bundle_id: MintBundleId
+    // ) -> MintBundleJson {
+    //     let mint_bundle = self.mint_bundles.get(&mint_bundle_id).unwrap();
+    //     MintBundleJson {
+    //         token_series_ids: match mint_bundle.token_series_ids {
+    //             Some(x) => Some(x.to_vec()),
+    //             None => None
+    //         },
+    //         token_ids: match mint_bundle.token_ids {
+    //             Some(x) => Some(x.to_vec()),
+    //             None => None
+    //         },
+    //         price: match mint_bundle.price {
+    //             Some(x) => Some(U128(x)),
+    //             None => None
+    //         },
+    //         limit_buy: mint_bundle.limit_buy
+    //     }
+    // }
 
     pub fn nft_get_series_single(&self, token_series_id: TokenSeriesId) -> TokenSeriesJson {
         let token_series = self.token_series_by_id.get(&token_series_id).expect("Series does not exist");
@@ -2115,161 +2115,161 @@ mod tests {
         )
     }
 
-    #[test]
-    fn test_create_mint_bundle() {
-        let (mut context, mut contract) = setup_contract();
-        testing_env!(context
-            .predecessor_account_id(accounts(1))
-            .attached_deposit(STORAGE_FOR_CREATE_SERIES)
-            .build()
-        );
+//     #[test]
+//     fn test_create_mint_bundle() {
+//         let (mut context, mut contract) = setup_contract();
+//         testing_env!(context
+//             .predecessor_account_id(accounts(1))
+//             .attached_deposit(STORAGE_FOR_CREATE_SERIES)
+//             .build()
+//         );
 
-        contract.create_mint_bundle(
-            "test-bundle-test".to_string(),
-            Some(vec!["1".to_string(), "2".to_string()]),
-            None,
-            Some(U128::from(5 * 10u128.pow(24))),
-            None
-        );
+//         contract.create_mint_bundle(
+//             "test-bundle-test".to_string(),
+//             Some(vec!["1".to_string(), "2".to_string()]),
+//             None,
+//             Some(U128::from(5 * 10u128.pow(24))),
+//             None
+//         );
 
-        let mint_bundle = contract.get_mint_bundle("test-bundle-test".to_string());
+//         let mint_bundle = contract.get_mint_bundle("test-bundle-test".to_string());
 
-        assert_eq!(mint_bundle.token_series_ids, Some(vec!["1".to_string(), "2".to_string()]));
-        assert_eq!(mint_bundle.token_ids, None);
-        assert_eq!(mint_bundle.price.unwrap(), U128::from(5 * 10u128.pow(24)));
-        assert_eq!(mint_bundle.limit_buy, None);
-    }
+//         assert_eq!(mint_bundle.token_series_ids, Some(vec!["1".to_string(), "2".to_string()]));
+//         assert_eq!(mint_bundle.token_ids, None);
+//         assert_eq!(mint_bundle.price.unwrap(), U128::from(5 * 10u128.pow(24)));
+//         assert_eq!(mint_bundle.limit_buy, None);
+//     }
 
-    #[test]
-    fn test_buy_mint_bundle() {
-        let (mut context, mut contract) = setup_contract();
-        testing_env!(context
-            .predecessor_account_id(accounts(1))
-            .attached_deposit(STORAGE_FOR_CREATE_SERIES)
-            .build()
-        );
+//     #[test]
+//     fn test_buy_mint_bundle() {
+//         let (mut context, mut contract) = setup_contract();
+//         testing_env!(context
+//             .predecessor_account_id(accounts(1))
+//             .attached_deposit(STORAGE_FOR_CREATE_SERIES)
+//             .build()
+//         );
 
-        let mut royalty: HashMap<AccountId, u32> = HashMap::new();
-        royalty.insert(accounts(1).to_string(), 1000);
+//         let mut royalty: HashMap<AccountId, u32> = HashMap::new();
+//         royalty.insert(accounts(1).to_string(), 1000);
 
-        create_series(&mut contract, &royalty, None, Some(2));
-        create_series(&mut contract, &royalty, None, Some(2));
-        create_series(&mut contract, &royalty, None, Some(2));
-        create_series(&mut contract, &royalty, None, Some(2));
+//         create_series(&mut contract, &royalty, None, Some(2));
+//         create_series(&mut contract, &royalty, None, Some(2));
+//         create_series(&mut contract, &royalty, None, Some(2));
+//         create_series(&mut contract, &royalty, None, Some(2));
 
-        testing_env!(context
-            .predecessor_account_id(accounts(1))
-            .attached_deposit(STORAGE_FOR_CREATE_SERIES)
-            .build()
-        );
+//         testing_env!(context
+//             .predecessor_account_id(accounts(1))
+//             .attached_deposit(STORAGE_FOR_CREATE_SERIES)
+//             .build()
+//         );
 
-        let price = 5 * 10u128.pow(24);
-        let mint_bundle_id = "test-bundle-test".to_string();
-        contract.create_mint_bundle(
-            mint_bundle_id.clone(),
-            Some(vec!["1".to_string(), "2".to_string(), "3".to_string(), "4".to_string()]),
-            None,
-            Some(U128::from(price)),
-            None
-        );
+//         let price = 5 * 10u128.pow(24);
+//         let mint_bundle_id = "test-bundle-test".to_string();
+//         contract.create_mint_bundle(
+//             mint_bundle_id.clone(),
+//             Some(vec!["1".to_string(), "2".to_string(), "3".to_string(), "4".to_string()]),
+//             None,
+//             Some(U128::from(price)),
+//             None
+//         );
 
-        testing_env!(context
-            .predecessor_account_id(accounts(2))
-            .attached_deposit(price + STORAGE_FOR_CREATE_SERIES)
-            .build()
-        );
+//         testing_env!(context
+//             .predecessor_account_id(accounts(2))
+//             .attached_deposit(price + STORAGE_FOR_CREATE_SERIES)
+//             .build()
+//         );
 
-        contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
-        contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
-        contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
-        contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
-        contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
-        contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
-        contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
-        contract.buy_mint_bundle(mint_bundle_id, accounts(2));
-    }
+//         contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
+//         contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
+//         contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
+//         contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
+//         contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
+//         contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
+//         contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
+//         contract.buy_mint_bundle(mint_bundle_id, accounts(2));
+//     }
 
-    #[test]
-    #[should_panic(expected = "Marble: Mint bundle does not exist or already finished")]
-    fn test_invalid_exhaust_mint_bundle() {
-        let (mut context, mut contract) = setup_contract();
-        testing_env!(context
-            .predecessor_account_id(accounts(1))
-            .attached_deposit(STORAGE_FOR_CREATE_SERIES)
-            .build()
-        );
+//     #[test]
+//     #[should_panic(expected = "Marble: Mint bundle does not exist or already finished")]
+//     fn test_invalid_exhaust_mint_bundle() {
+//         let (mut context, mut contract) = setup_contract();
+//         testing_env!(context
+//             .predecessor_account_id(accounts(1))
+//             .attached_deposit(STORAGE_FOR_CREATE_SERIES)
+//             .build()
+//         );
 
-        let mut royalty: HashMap<AccountId, u32> = HashMap::new();
-        royalty.insert(accounts(1).to_string(), 1000);
+//         let mut royalty: HashMap<AccountId, u32> = HashMap::new();
+//         royalty.insert(accounts(1).to_string(), 1000);
 
-        create_series(&mut contract, &royalty, None, Some(2));
+//         create_series(&mut contract, &royalty, None, Some(2));
 
-        testing_env!(context
-            .predecessor_account_id(accounts(1))
-            .attached_deposit(STORAGE_FOR_CREATE_SERIES)
-            .build()
-        );
+//         testing_env!(context
+//             .predecessor_account_id(accounts(1))
+//             .attached_deposit(STORAGE_FOR_CREATE_SERIES)
+//             .build()
+//         );
 
-        let price = 5 * 10u128.pow(24);
-        let mint_bundle_id = "test-bundle-test".to_string();
-        contract.create_mint_bundle(
-            mint_bundle_id.clone(),
-            Some(vec!["1".to_string()]),
-            None,
-            Some(U128::from(price)),
-            None
-        );
+//         let price = 5 * 10u128.pow(24);
+//         let mint_bundle_id = "test-bundle-test".to_string();
+//         contract.create_mint_bundle(
+//             mint_bundle_id.clone(),
+//             Some(vec!["1".to_string()]),
+//             None,
+//             Some(U128::from(price)),
+//             None
+//         );
 
-        testing_env!(context
-            .predecessor_account_id(accounts(2))
-            .attached_deposit(price + STORAGE_FOR_CREATE_SERIES)
-            .build()
-        );
+//         testing_env!(context
+//             .predecessor_account_id(accounts(2))
+//             .attached_deposit(price + STORAGE_FOR_CREATE_SERIES)
+//             .build()
+//         );
 
-        contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
-        contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
-        contract.buy_mint_bundle(mint_bundle_id, accounts(2));
-    }
+//         contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
+//         contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
+//         contract.buy_mint_bundle(mint_bundle_id, accounts(2));
+//     }
 
-    #[test]
-    #[should_panic(expected = "Marble: Mint exhausted for account_id charlie")]
-    fn test_invalid_exhaust_limit_buy_mint_bundle() {
-        let (mut context, mut contract) = setup_contract();
-        testing_env!(context
-            .predecessor_account_id(accounts(1))
-            .attached_deposit(STORAGE_FOR_CREATE_SERIES)
-            .build()
-        );
+//     #[test]
+//     #[should_panic(expected = "Marble: Mint exhausted for account_id charlie")]
+//     fn test_invalid_exhaust_limit_buy_mint_bundle() {
+//         let (mut context, mut contract) = setup_contract();
+//         testing_env!(context
+//             .predecessor_account_id(accounts(1))
+//             .attached_deposit(STORAGE_FOR_CREATE_SERIES)
+//             .build()
+//         );
 
-        let mut royalty: HashMap<AccountId, u32> = HashMap::new();
-        royalty.insert(accounts(1).to_string(), 1000);
+//         let mut royalty: HashMap<AccountId, u32> = HashMap::new();
+//         royalty.insert(accounts(1).to_string(), 1000);
 
-        create_series(&mut contract, &royalty, None, Some(2));
+//         create_series(&mut contract, &royalty, None, Some(2));
 
-        testing_env!(context
-            .predecessor_account_id(accounts(1))
-            .attached_deposit(STORAGE_FOR_CREATE_SERIES)
-            .build()
-        );
+//         testing_env!(context
+//             .predecessor_account_id(accounts(1))
+//             .attached_deposit(STORAGE_FOR_CREATE_SERIES)
+//             .build()
+//         );
 
-        let price = 5 * 10u128.pow(24);
-        let mint_bundle_id = "test-bundle-test".to_string();
-        contract.create_mint_bundle(
-            mint_bundle_id.clone(),
-            Some(vec!["1".to_string()]),
-            None,
-            Some(U128::from(price)),
-            Some(1)
-        );
+//         let price = 5 * 10u128.pow(24);
+//         let mint_bundle_id = "test-bundle-test".to_string();
+//         contract.create_mint_bundle(
+//             mint_bundle_id.clone(),
+//             Some(vec!["1".to_string()]),
+//             None,
+//             Some(U128::from(price)),
+//             Some(1)
+//         );
 
-        testing_env!(context
-            .predecessor_account_id(accounts(2))
-            .attached_deposit(price + STORAGE_FOR_CREATE_SERIES)
-            .build()
-        );
+//         testing_env!(context
+//             .predecessor_account_id(accounts(2))
+//             .attached_deposit(price + STORAGE_FOR_CREATE_SERIES)
+//             .build()
+//         );
 
-        contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
-        contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
-        contract.buy_mint_bundle(mint_bundle_id, accounts(2));
-    }
+//         contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
+//         contract.buy_mint_bundle(mint_bundle_id.clone(), accounts(2));
+//         contract.buy_mint_bundle(mint_bundle_id, accounts(2));
+//     }
 }

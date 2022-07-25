@@ -38,7 +38,7 @@ pub fn init() -> (UserAccount, ContractAccount<Contract>, UserAccount) {
 
     root.create_user(
         "test".repeat(16),
-        to_yocto("100"),
+        to_yocto("1000"),
     );
 
     (root, nft_contract, treasury)
@@ -264,38 +264,38 @@ fn simulate_approve() {
 //     assert_eq!(for_seller, diff_after_sell_alice);
 // }
 
-#[test]
-fn simulate_create_mint_bundle() {
-    let (root, nft, alice) = init();
+// #[test]
+// fn simulate_create_mint_bundle() {
+//     let (root, nft, alice) = init();
 
-    let initial_storage_usage = nft.account().unwrap().storage_usage;
+//     let initial_storage_usage = nft.account().unwrap().storage_usage;
 
-    let mint_bundle_id = "mint-bundle-test";
-    let mut token_series_ids: Vec<TokenSeriesId> = vec![];
+//     let mint_bundle_id = "mint-bundle-test";
+//     let mut token_series_ids: Vec<TokenSeriesId> = vec![];
 
-    for i in 0..1100 {
-        token_series_ids.push(i.to_string());
-    }
+//     for i in 0..1100 {
+//         token_series_ids.push(i.to_string());
+//     }
 
-    let outcome = root.call(
-        nft.account_id(),
-        "create_mint_bundle",
-        &json!({
-            "mint_bundle_id": mint_bundle_id,
-            "token_series_ids": token_series_ids,
-            "price": to_yocto("1").to_string(),
-        }).to_string().into_bytes(),
-        DEFAULT_GAS,
-        to_yocto("1")
-    );
+//     let outcome = root.call(
+//         nft.account_id(),
+//         "create_mint_bundle",
+//         &json!({
+//             "mint_bundle_id": mint_bundle_id,
+//             "token_series_ids": token_series_ids,
+//             "price": to_yocto("1").to_string(),
+//         }).to_string().into_bytes(),
+//         DEFAULT_GAS,
+//         to_yocto("1")
+//     );
 
-    outcome.assert_success();
+//     outcome.assert_success();
 
-    let storage_price_for_adding_series =
-        (nft.account().unwrap().storage_usage - initial_storage_usage) as u128 * 10u128.pow(19);
-    println!("[CREATE MINT BUNDLE] Storage price: {} yoctoNEAR", storage_price_for_adding_series);
-    println!("[CREATE MINT BUNDLE] Gas burnt price: {} TeraGas", outcome.gas_burnt() as f64 / 1e12);
-}
+//     let storage_price_for_adding_series =
+//         (nft.account().unwrap().storage_usage - initial_storage_usage) as u128 * 10u128.pow(19);
+//     println!("[CREATE MINT BUNDLE] Storage price: {} yoctoNEAR", storage_price_for_adding_series);
+//     println!("[CREATE MINT BUNDLE] Gas burnt price: {} TeraGas", outcome.gas_burnt() as f64 / 1e12);
+// }
 
 // #[test]
 // fn simulate_change_royalty() {
