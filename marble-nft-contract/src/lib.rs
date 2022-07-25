@@ -264,7 +264,7 @@ impl Contract {
         let mut total_series = self.total_series;
 
         if total_series == 0 {
-            total_series = self.token_series_by_id.len() + 1;
+            total_series = self.token_series_by_id.len();
         }
         total_series = total_series + 1;
 
@@ -1010,13 +1010,33 @@ impl Contract {
         // CUSTOM (switch metadata for the token_series metadata)
         let mut token_id_iter = token_id.split(TOKEN_DELIMETER);
         let token_series_id = token_id_iter.next().unwrap().parse().unwrap();
-        let series_metadata = self.token_series_by_id.get(&token_series_id).unwrap().metadata;
+        let series_metadata:TokenMetadata = match self.token_series_by_id.get(&token_series_id) {
+            None => {
+                TokenMetadata {
+                    title: None,          // ex. "Arch Nemesis: Mail Carrier" or "Parcel #5055"
+                    description: None,    // free-form description
+                    media: None, // URL to associated media, preferably to decentralized, content-addressed storage
+                    media_hash: None, // Base64-encoded sha256 hash of content referenced by the `media` field. Required if `media` is included.
+                    copies: None, // number of copies of this set of metadata in existence when token was minted.
+                    issued_at: Some(env::block_timestamp().to_string()), // ISO 8601 datetime when token was issued or minted
+                    expires_at: None, // ISO 8601 datetime when token expires
+                    starts_at: None, // ISO 8601 datetime when token starts being valid
+                    updated_at: None, // ISO 8601 datetime when token was last updated
+                    extra: None, // anything extra the NFT wants to store on-chain. Can be stringified JSON.
+                    reference: None, // URL to an off-chain JSON file with more info.
+                    reference_hash: None, // Base64-encoded sha256 hash of JSON from reference field. Required if `reference` is included.
+                }
+            },
+            Some(token_serie) => {
+                token_serie.metadata
+            },
+        };
 
         let mut token_metadata = self.tokens.token_metadata_by_id.as_ref().unwrap().get(&token_id).unwrap();
 
         token_metadata.title = Some(format!(
             "{}{}{}",
-            series_metadata.title.unwrap(),
+            series_metadata.title.unwrap_or_default(),
             TITLE_DELIMETER,
             token_id_iter.next().unwrap()
         ));
