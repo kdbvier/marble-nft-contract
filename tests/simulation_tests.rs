@@ -379,8 +379,50 @@ fn simulate_remove_series() {
 
     let series = root.view(nft.account_id(), "nft_get_series", &json!({}).to_string().into_bytes()).unwrap_json_value();
     println!("\n\n remove series id: {:?}", series);
+}
 
-    
+#[test]
+fn simulate_nft_batch_mint() {
+    let (root, nft, alice) = init();
 
+    let initial_storage_usage = nft.account().unwrap().storage_usage;
+
+    let outcome = root.call(
+        nft.account_id(),
+        "nft_create_series",
+        &json!({
+            "token_metadata": {
+                "title": "A".repeat(200),
+                "reference": "A".repeat(59),
+                "media": "A".repeat(59),
+                "copies": 100u64,
+            },
+            "price": to_yocto("1").to_string(),
+            "royalty": {
+                "0".repeat(64): 1000u32
+            },
+            "creator_id": alice.account_id(),
+        }).to_string().into_bytes(),
+        DEFAULT_GAS,
+        to_yocto("2")
+    );
+
+    let batch_mint = root.call(
+        nft.account_id(),
+        "nft_batch_mint",
+        &json!({
+            "token_series_id":"1",
+            "receiver_id": alice.account_id(),
+            "num_to_mint": 30,
+        }).to_string().into_bytes(),
+        DEFAULT_GAS,
+        to_yocto("2")
+    );
+
+    println!("\n\n batch mint result: {:?}",batch_mint);
+
+    let nfts = root.view(nft.account_id(), "nft_supply_for_series",&json!({}).to_string().into_bytes()).unwrap_json_value();
+
+    println!("\n\n number of minted nfts: {:?}", nfts);
 
 }

@@ -416,6 +416,94 @@ impl Contract {
     }
 
     #[payable]
+    pub fn nft_batch_mint(
+        &mut self,
+        token_series_id: TokenSeriesId,
+        receiver_id: ValidAccountId,
+        nft_metadata: Option<TokenMetadata>,
+        num_to_mint: u64 
+    ) {
+        let initial_storage_usage = env::storage_usage();
+        assert!(num_to_mint>0, "No tokens to mint");
+        assert!(num_to_mint <=100, "Cannot mint more than 100 tokens due to gas limits");
+        let mut token_series = self.token_series_by_id.get(&token_series_id).expect("Marble: Token series not exist");
+        assert_eq!(env::predecessor_account_id(), token_series.creator_id, "Marble: not creator");
+        let num_tokens = token_series.tokens.len();
+        let max_copies = token_series.metadata.copies.unwrap_or(u64::MAX);
+        let owner_id: AccountId = receiver_id.to_string();
+
+        assert!(max_copies>=num_tokens+num_to_mint, "Marble: Exceed total supply");
+        let _metadata: TokenMetadata = match nft_metadata {
+            None => {
+                TokenMetadata {
+                    title: None,          // ex. "Arch Nemesis: Mail Carrier" or "Parcel #5055"
+                    description: None,    // free-form description
+                    media: None, // URL to associated media, preferably to decentralized, content-addressed storage
+                    media_hash: None, // Base64-encoded sha256 hash of content referenced by the `media` field. Required if `media` is included.
+                    copies: None, // number of copies of this set of metadata in existence when token was minted.
+                    issued_at: Some(env::block_timestamp().to_string()), // ISO 8601 datetime when token was issued or minted
+                    expires_at: None, // ISO 8601 datetime when token expires
+                    starts_at: None, // ISO 8601 datetime when token starts being valid
+                    updated_at: None, // ISO 8601 datetime when token was last updated
+                    extra: None, // anything extra the NFT wants to store on-chain. Can be stringified JSON.
+                    reference: None, // URL to an off-chain JSON file with more info.
+                    reference_hash: None, // Base64-encoded sha256 hash of JSON from reference field. Required if `reference` is included.
+                }
+            },
+            Some(metadata) => {
+                TokenMetadata {
+                    title: None,          // ex. "Arch Nemesis: Mail Carrier" or "Parcel #5055"
+                    description: None,    // free-form description
+                    media: metadata.media, // URL to associated media, preferably to decentralized, content-addressed storage
+                    media_hash: None, // Base64-encoded sha256 hash of content referenced by the `media` field. Required if `media` is included.
+                    copies: None, // number of copies of this set of metadata in existence when token was minted.
+                    issued_at: Some(env::block_timestamp().to_string()), // ISO 8601 datetime when token was issued or minted
+                    expires_at: None, // ISO 8601 datetime when token expires
+                    starts_at: Some(env::block_timestamp().to_string()), // ISO 8601 datetime when token starts being valid
+                    updated_at: None, // ISO 8601 datetime when token was last updated
+                    extra: None, // anything extra the NFT wants to store on-chain. Can be stringified JSON.
+                    reference: metadata.reference, // URL to an off-chain JSON file with more info.
+                    reference_hash: None, // Base64-encoded sha256 hash of JSON from reference field. Required if `reference` is included.
+                }
+            },
+        };
+
+        let mut minted_token_ids: Vec<TokenId> = Vec::new();
+
+        (0..num_to_mint).for_each(|i| {
+            let token_id = format!("{}{}{}", &token_series_id, TOKEN_DELIMETER, num_tokens+1+i);
+            token_series.tokens.insert(&token_id);
+            self.token_series_by_id.insert(&token_series_id, &token_series);
+            self.tokens.owner_by_id.insert(&token_id, &owner_id);
+            self.tokens
+            .token_metadata_by_id
+            .as_mut()
+            .and_then(|by_id| by_id.insert(&token_id, &_metadata));
+
+            if let Some(tokens_per_owner) = &mut self.tokens.tokens_per_owner {
+                let mut token_ids = tokens_per_owner.get(&owner_id).unwrap_or_else(|| {
+                    UnorderedSet::new(StorageKey::TokensPerOwner {
+                        account_hash: env::sha256(&owner_id.as_bytes()),
+                    })
+                });
+                minted_token_ids.push(token_id.clone());
+                token_ids.insert(&token_id);
+                tokens_per_owner.insert(&owner_id, &token_ids);
+            }
+        });
+
+        refund_deposit(env::storage_usage() - initial_storage_usage, 0);
+
+        println!("\n\n batch mint logs: {:?}", minted_token_ids.clone());
+        NearEvent::log_nft_mint(
+            token_series.creator_id.clone(),
+            minted_token_ids,
+            None,
+        );
+
+    }
+
+    #[payable]
     pub fn nft_mint_and_approve(
         &mut self,
         token_series_id: TokenSeriesId,
