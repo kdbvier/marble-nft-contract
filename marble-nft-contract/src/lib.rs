@@ -348,8 +348,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn nft_edit_series(&mut self, token_series_id: TokenSeriesId, token_metadata: TokenMetadata) {
-        let initial_storage_usage = env::storage_usage();
+    pub fn nft_edit_series(&mut self, token_series_id: TokenSeriesId, token_metadata: TokenMetadata) -> TokenSeriesJson {
         let mut token_series = self.token_series_by_id.get(&token_series_id).expect("Token series not exist");
         assert_eq!(
             env::predecessor_account_id(),
@@ -358,7 +357,12 @@ impl Contract {
         );
         token_series.metadata = token_metadata.clone();
         self.token_series_by_id.insert(&token_series_id, &token_series);
-        refund_deposit(env::storage_usage() - initial_storage_usage, 0);
+        TokenSeriesJson {
+            token_series_id,
+            metadata: token_metadata,
+            creator_id: token_series.creator_id.into(),
+            royalty: token_series.royalty,
+        }
     }
 
     #[payable]
@@ -1491,6 +1495,7 @@ mod tests {
             ),
             reference_hash: None,
         });
+        println!("\n\n Remove series console:");
         let nft_series_return = contract.nft_get_series_single("1".to_string());
         assert_eq!(
             nft_series_return.metadata.reference.unwrap(),
@@ -1500,6 +1505,7 @@ mod tests {
             nft_series_return.metadata.media.unwrap(),
             "newmedia".to_string()
         );
+
     }
     
     // #[test]
