@@ -348,6 +348,20 @@ impl Contract {
     }
 
     #[payable]
+    pub fn nft_edit_series(&mut self, token_series_id: TokenSeriesId, token_metadata: TokenMetadata) -> TokenMetadata {
+        assert_one_yocto();
+        let mut token_series = self.token_series_by_id.get(&token_series_id).expect("Token series not exist");
+        assert_eq!(
+            env::predecessor_account_id(),
+            token_series.creator_id,
+            "Marble: Creator only"
+        );
+        token_series.metadata = token_metadata.clone();
+        self.token_series_by_id.insert(&token_series_id, &token_series);
+        return token_metadata;
+    }
+
+    #[payable]
     pub fn nft_remove_series(
         &mut self,
         token_series_id: TokenSeriesId
