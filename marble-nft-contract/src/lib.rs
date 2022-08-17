@@ -348,8 +348,8 @@ impl Contract {
     }
 
     #[payable]
-    pub fn nft_edit_series(&mut self, token_series_id: TokenSeriesId, token_metadata: TokenMetadata) -> TokenMetadata {
-        assert_one_yocto();
+    pub fn nft_edit_series(&mut self, token_series_id: TokenSeriesId, token_metadata: TokenMetadata) {
+        let initial_storage_usage = env::storage_usage();
         let mut token_series = self.token_series_by_id.get(&token_series_id).expect("Token series not exist");
         assert_eq!(
             env::predecessor_account_id(),
@@ -358,7 +358,7 @@ impl Contract {
         );
         token_series.metadata = token_metadata.clone();
         self.token_series_by_id.insert(&token_series_id, &token_series);
-        return token_metadata;
+        refund_deposit(env::storage_usage() - initial_storage_usage, 0);
     }
 
     #[payable]
@@ -1473,15 +1473,14 @@ mod tests {
             Some(U128::from(1 * 10u128.pow(24))),
             None,
         );
-
-        let new_metadata:TokenMetadata = {
+        contract.nft_edit_series("1".to_string(),TokenMetadata {
             title: Some("Tsundere land".to_string()),
             description: None,
             media: Some(
                 "newmedia".to_string()
             ),
             media_hash: None,
-            copies: copies,
+            copies: None,
             issued_at: None,
             expires_at: None,
             starts_at: None,
@@ -1491,15 +1490,14 @@ mod tests {
                 "newreference".to_string()
             ),
             reference_hash: None,
-        };
-        let edited_nft_serie = contract.nft_edit_series("1".to_string(), new_metadata);
+        });
         let nft_series_return = contract.nft_get_series_single("1".to_string());
         assert_eq!(
             nft_series_return.metadata.reference.unwrap(),
             "newreference".to_string()
         );
         assert_eq!(
-            nft_series_return.metadata.reference.unwrap(),
+            nft_series_return.metadata.media.unwrap(),
             "newmedia".to_string()
         );
     }
