@@ -1455,6 +1455,54 @@ mod tests {
             "bafybeicg4ss7qh5odijfn2eogizuxkrdh3zlv4eftcmgnljwu7dm64uwji".to_string()
         );
     }
+
+    #[test]
+    fn test_edit_series() {
+        let (mut context, mut contract) = setup_contract();
+        testing_env!(context
+            .predecessor_account_id(accounts(1))
+            .attached_deposit(STORAGE_FOR_CREATE_SERIES)
+            .build()
+        );
+
+        let mut royalty: HashMap<AccountId, u32> = HashMap::new();
+        royalty.insert(accounts(1).to_string(), 1000);
+        create_series(
+            &mut contract,
+            &royalty,
+            Some(U128::from(1 * 10u128.pow(24))),
+            None,
+        );
+
+        let new_metadata:TokenMetadata = {
+            title: Some("Tsundere land".to_string()),
+            description: None,
+            media: Some(
+                "newmedia".to_string()
+            ),
+            media_hash: None,
+            copies: copies,
+            issued_at: None,
+            expires_at: None,
+            starts_at: None,
+            updated_at: None,
+            extra: None,
+            reference: Some(
+                "newreference".to_string()
+            ),
+            reference_hash: None,
+        };
+        let edited_nft_serie = contract.nft_edit_series("1".to_string(), new_metadata);
+        let nft_series_return = contract.nft_get_series_single("1".to_string());
+        assert_eq!(
+            nft_series_return.metadata.reference.unwrap(),
+            "newreference".to_string()
+        );
+        assert_eq!(
+            nft_series_return.metadata.reference.unwrap(),
+            "newmedia".to_string()
+        );
+    }
     
     // #[test]
     // fn test_remove_series() {
