@@ -918,9 +918,8 @@ impl Contract {
             .iter()
             .skip(start_index as usize)
             .take(limit)
-            .map(|token_id| 
-                if token_id.is_some() self.nft_token(token_id).unwrap()
-                else {})
+            .filter_map(|token_id| 
+                self.nft_token(token_id))
             .collect()
     }
 
