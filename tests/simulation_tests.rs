@@ -431,3 +431,95 @@ fn simulate_nft_batch_mint() {
     println!("\n\n number of minted nfts: {:?}", nfts);
 
 }
+
+#[test]
+fn simulate_get_series_by_ids() {
+    let (root, nft, alice) = init();
+
+    let initial_storage_usage = nft.account().unwrap().storage_usage;
+
+    let outcome = root.call(
+        nft.account_id(),
+        "nft_create_series",
+        &json!({
+            "token_metadata": {
+                "title": "A".repeat(200),
+                "reference": "A".repeat(59),
+                "media": "A".repeat(59),
+                "copies": 100u64,
+            },
+            "price": to_yocto("1").to_string(),
+            "royalty": {
+                "0".repeat(64): 1000u32
+            },
+            "creator_id": alice.account_id(),
+        }).to_string().into_bytes(),
+        DEFAULT_GAS,
+        to_yocto("2")
+    );
+    let outcome1 = root.call(
+        nft.account_id(),
+        "nft_create_series",
+        &json!({
+            "token_metadata": {
+                "title": "A".repeat(200),
+                "reference": "A".repeat(59),
+                "media": "A".repeat(59),
+                "copies": 100u64,
+            },
+            "price": to_yocto("1").to_string(),
+            "royalty": {
+                "0".repeat(64): 1000u32
+            },
+            "creator_id": alice.account_id(),
+        }).to_string().into_bytes(),
+        DEFAULT_GAS,
+        to_yocto("2")
+    );
+    let outcome2 = root.call(
+        nft.account_id(),
+        "nft_create_series",
+        &json!({
+            "token_metadata": {
+                "title": "A".repeat(200),
+                "reference": "A".repeat(59),
+                "media": "A".repeat(59),
+                "copies": 100u64,
+            },
+            "price": to_yocto("1").to_string(),
+            "royalty": {
+                "0".repeat(64): 1000u32
+            },
+            "creator_id": alice.account_id(),
+        }).to_string().into_bytes(),
+        DEFAULT_GAS,
+        to_yocto("2")
+    );
+    let outcome3 = root.call(
+        nft.account_id(),
+        "nft_create_series",
+        &json!({
+            "token_metadata": {
+                "title": "A".repeat(200),
+                "reference": "A".repeat(59),
+                "media": "A".repeat(59),
+                "copies": 100u64,
+            },
+            "price": to_yocto("1").to_string(),
+            "royalty": {
+                "0".repeat(64): 1000u32
+            },
+            "creator_id": alice.account_id(),
+        }).to_string().into_bytes(),
+        DEFAULT_GAS,
+        to_yocto("2")
+    );
+    // let series = root.view(nft.account_id(), "nft_get_series", &json!({}).to_string().into_bytes()).unwrap_json_value();
+    // println!("\n\n create series id: {:?}", series);
+    let selected_series = root.view(
+        nft.account_id(),
+        "nft_get_series_by_ids",
+        &json!({"token_series_ids":["1","3"]
+    }).to_string().into_bytes()).unwrap_json_value();
+    println!("\n\n get selected series: {:?}", selected_series);
+}

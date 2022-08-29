@@ -1099,6 +1099,14 @@ impl Contract {
         (self.token_series_by_id.len() as u128).into()
     }
 
+    pub fn nft_get_total_series(&self) -> u64 {
+        self.total_series
+    }
+
+    pub fn nft_get_series_by_ids(&self, token_series_ids: Vec<TokenSeriesId>) -> Vec<TokenSeriesJson> {
+        token_series_ids.into_iter().map(|id| self.nft_get_series_single(id)).collect()
+    }
+
     pub fn nft_tokens(&self, from_index: Option<U128>, limit: Option<u64>) -> Vec<Token> {
         // Get starting index, whether or not it was explicitly given.
         // Defaults to 0 based on the spec:
