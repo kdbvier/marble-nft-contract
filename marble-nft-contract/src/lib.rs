@@ -367,6 +367,17 @@ impl Contract {
         token_series.metadata = token_metadata.clone();
         self.token_series_by_id
             .insert(&token_series_id, &token_series);
+        env::log(
+            json!({
+                "type": "nft_create_series",
+                "params": {
+                    "token_series_id": token_series_id,
+                    "token_metadata": token_metadata,
+                }
+            })
+            .to_string()
+            .as_bytes(),
+        );
         TokenSeriesJson {
             token_series_id,
             metadata: token_metadata,
