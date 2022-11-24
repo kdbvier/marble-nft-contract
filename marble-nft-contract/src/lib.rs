@@ -369,7 +369,7 @@ impl Contract {
             .insert(&token_series_id, &token_series);
         env::log(
             json!({
-                "type": "nft_create_series",
+                "type": "nft_edit_series",
                 "params": {
                     "token_series_id": token_series_id,
                     "token_metadata": token_metadata,
@@ -394,6 +394,16 @@ impl Contract {
             "Marble: Owner Only"
         );
         self.token_series_by_id.remove(&token_series_id);
+        env::log(
+            json!({
+                "type": "nft_remove_series",
+                "params": {
+                    "token_series_id": token_series_id,
+                }
+            })
+            .to_string()
+            .as_bytes(),
+        );
     }
 
     #[payable]
@@ -973,6 +983,23 @@ impl Contract {
             .collect()
     }
 
+    pub fn nft_get_series_by_ids(
+        &self,
+        token_series_ids: Vec<TokenSeriesId>,
+    ) -> Vec<TokenSeriesJson> {
+        token_series_ids
+            .into_iter()
+            .map(|id| self.nft_get_series_single(id))
+            .collect()
+    }
+
+    pub fn nft_tokens_by_ids(&self, token_ids: Vec<TokenId>) -> Vec<Token> {
+        token_ids
+            .into_iter()
+            .filter_map(|id| self.nft_token(id))
+            .collect()
+    }
+
     pub fn nft_supply_for_series(&self, token_series_id: TokenSeriesId) -> U64 {
         self.token_series_by_id
             .get(&token_series_id)
@@ -1202,16 +1229,6 @@ impl Contract {
 
     pub fn nft_get_total_series(&self) -> u64 {
         self.total_series
-    }
-
-    pub fn nft_get_series_by_ids(
-        &self,
-        token_series_ids: Vec<TokenSeriesId>,
-    ) -> Vec<TokenSeriesJson> {
-        token_series_ids
-            .into_iter()
-            .map(|id| self.nft_get_series_single(id))
-            .collect()
     }
 
     pub fn nft_tokens(&self, from_index: Option<U128>, limit: Option<u64>) -> Vec<Token> {
