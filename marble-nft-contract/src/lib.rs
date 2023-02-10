@@ -431,8 +431,6 @@ impl Contract {
         );
 
         refund_deposit(env::storage_usage() - initial_storage_usage, 0);
-
-        NearEvent::log_nft_mint(receiver_id.to_string(), vec![token_id.clone()], None);
         env::log(
             json!({
                 "type": "nft_mint",
@@ -440,7 +438,8 @@ impl Contract {
                     "token_series_id": token_series_id,
                     "name": nft_metadata.title,
                     "description": nft_metadata.description,
-                    "media": nft_metadata.media
+                    "media": nft_metadata.media,
+                    "token_id": token_id.clone()
                 }
             })
             .to_string()
